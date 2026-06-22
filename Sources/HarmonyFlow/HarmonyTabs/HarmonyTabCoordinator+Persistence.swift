@@ -1,5 +1,5 @@
 //
-//  HarmonyFlowTabCoordinator+Persistence.swift
+//  HarmonyTabCoordinator+Persistence.swift
 //  HarmonyFlow
 //
 //  Created by Ben Gottlieb on 6/12/26.
@@ -7,14 +7,14 @@
 
 import Foundation
 
-struct HarmonyTabSnapshot<Tab: HarmonyTab & Codable>: Codable where Tab.Screen: Codable {
+struct HarmonyTabSnapshot<Tab: HarmonyTab & Codable>: Codable {
 	var selectedTab: Tab
 	var isTabBarHidden: Bool
-	var stacks: [Tab: HarmonySnapshot<Tab.Screen>]
-	var bottomSheet: [HarmonySnapshot<Tab.Screen>]		// 0 or 1 elements; the tab-level sheet
+	var stacks: [Tab: HarmonySnapshot]
+	var bottomSheet: [HarmonySnapshot]		// 0 or 1 elements; the tab-level sheet
 }
 
-extension HarmonyTabCoordinator where Tab: Codable, Tab.Screen: Codable {
+extension HarmonyTabCoordinator where Tab: Codable {
 	var snapshot: HarmonyTabSnapshot<Tab> {
 		HarmonyTabSnapshot(
 			selectedTab: selectedTab,

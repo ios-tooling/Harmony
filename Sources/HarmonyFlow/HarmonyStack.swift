@@ -1,5 +1,5 @@
 //
-//  HarmonyFlowStack.swift
+//  HarmonyStack.swift
 //  HarmonyFlow
 //
 //  Created by Ben Gottlieb on 6/9/26.
@@ -7,24 +7,23 @@
 
 import SwiftUI
 
-
-public struct HarmonyStack<Screen: HarmonyScreen>: View {
+public struct HarmonyStack: View {
 	// not @State: the coordinator is owned by its parent (app, tab, split, or
 	// presenting coordinator), and container views may swap it out
-	let coordinator: HarmonyCoordinator<Screen>
+	let coordinator: HarmonyCoordinator
 
-	public init(_ coordinator: HarmonyCoordinator<Screen>) {
+	public init(_ coordinator: HarmonyCoordinator) {
 		self.coordinator = coordinator
 	}
 
-	var config: HarmonyCoordinator<Screen>.ScreenConfiguration { .init(coordinator: coordinator) }
+	var config: HarmonyScreenConfiguration { .init(coordinator: coordinator) }
 
 	public var body: some View {
 		@Bindable var coordinator = coordinator
 
 		NavigationStack(path: coordinator.pathBinding) {
 			coordinator.root.body(configuration: config)
-				.navigationDestination(for: Screen.self) { screen in
+				.navigationDestination(for: HarmonyScreen.self) { screen in
 					screen.body(configuration: config)
 				}
 		}

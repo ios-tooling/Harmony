@@ -1,5 +1,5 @@
 //
-//  HarmonyFlowSplitCoordinator+Persistence.swift
+//  HarmonySplitCoordinator+Persistence.swift
 //  HarmonyFlow
 //
 //  Created by Ben Gottlieb on 6/12/26.
@@ -7,14 +7,14 @@
 
 import Foundation
 
-struct HarmonySplitSnapshot<Screen: HarmonyScreen & Codable>: Codable {
-	var sidebar: HarmonySnapshot<Screen>
-	var content: [HarmonySnapshot<Screen>]		// 0 or 1 elements; the optional middle column
-	var detail: HarmonySnapshot<Screen>
+struct HarmonySplitSnapshot: Codable {
+	var sidebar: HarmonySnapshot
+	var content: [HarmonySnapshot]		// 0 or 1 elements; the optional middle column
+	var detail: HarmonySnapshot
 }
 
-extension HarmonySplitCoordinator where Screen: Codable {
-	var snapshot: HarmonySplitSnapshot<Screen> {
+extension HarmonySplitCoordinator {
+	var snapshot: HarmonySplitSnapshot {
 		HarmonySplitSnapshot(
 			sidebar: sidebarCoordinator.snapshot,
 			content: contentCoordinator.map { [$0.snapshot] } ?? [],
@@ -27,7 +27,7 @@ extension HarmonySplitCoordinator where Screen: Codable {
 	}
 
 	public convenience init(restoring data: Data) throws {
-		let snapshot = try JSONDecoder().decode(HarmonySplitSnapshot<Screen>.self, from: data)
+		let snapshot = try JSONDecoder().decode(HarmonySplitSnapshot.self, from: data)
 		self.init(
 			sidebar: HarmonyCoordinator(snapshot: snapshot.sidebar),
 			content: snapshot.content.first.map { HarmonyCoordinator(snapshot: $0) },

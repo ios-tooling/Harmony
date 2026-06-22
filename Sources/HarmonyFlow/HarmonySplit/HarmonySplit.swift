@@ -7,10 +7,10 @@
 
 import SwiftUI
 
-public struct HarmonySplit<Screen: HarmonyScreen>: View {
-	let coordinator: HarmonySplitCoordinator<Screen>
+public struct HarmonySplit: View {
+	let coordinator: HarmonySplitCoordinator
 
-	public init(_ coordinator: HarmonySplitCoordinator<Screen>) {
+	public init(_ coordinator: HarmonySplitCoordinator) {
 		self.coordinator = coordinator
 	}
 

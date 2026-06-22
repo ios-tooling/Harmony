@@ -17,8 +17,8 @@ private enum SheetMetrics {
 	static let dismissThreshold = 0.6
 }
 
-struct HarmonyBottomSheet<Screen: HarmonyScreen>: View {
-	let coordinator: HarmonyCoordinator<Screen>
+struct HarmonyBottomSheet: View {
+	let coordinator: HarmonyCoordinator
 
 	@State private var currentDetent: HarmonyDetent?
 	@State private var dragAdjustment: CGFloat = 0

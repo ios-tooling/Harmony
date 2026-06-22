@@ -13,7 +13,7 @@ import SwiftUI
 struct HarmonyPresentationResultTests {
 	@Test func finishDeliversValueToPresenter() async {
 		let parent = HarmonyCoordinator(TestScreen.home)
-		async let pending: Int? = parent.present(.settings)
+		async let pending: Int? = parent.present(TestScreen.settings)
 		while parent.sheetCoordinator == nil { await Task.yield() }
 		parent.sheetCoordinator?.finish(returning: 42)
 		let result = await pending
@@ -22,7 +22,7 @@ struct HarmonyPresentationResultTests {
 
 	@Test func plainDismissalResumesWithNil() async {
 		let parent = HarmonyCoordinator(TestScreen.home)
-		async let pending: Int? = parent.present(.settings)
+		async let pending: Int? = parent.present(TestScreen.settings)
 		while parent.sheetCoordinator == nil { await Task.yield() }
 		parent.sheetCoordinator?.dismiss()
 		let result = await pending
@@ -33,9 +33,9 @@ struct HarmonyPresentationResultTests {
 		// presenting something new over a pending presentation must not leave
 		// the original caller suspended forever
 		let parent = HarmonyCoordinator(TestScreen.home)
-		async let pending: Int? = parent.present(.settings)
+		async let pending: Int? = parent.present(TestScreen.settings)
 		while parent.sheetCoordinator == nil { await Task.yield() }
-		parent.partialModal(.detail)
+		parent.partialModal(TestScreen.detail)
 		let result = await pending
 		#expect(result == nil)
 		#expect(parent.sheetCoordinator?.root == .detail)
@@ -43,7 +43,7 @@ struct HarmonyPresentationResultTests {
 
 	@Test func mismatchedResultTypeResumesWithNil() async {
 		let parent = HarmonyCoordinator(TestScreen.home)
-		async let pending: Int? = parent.present(.settings)
+		async let pending: Int? = parent.present(TestScreen.settings)
 		while parent.sheetCoordinator == nil { await Task.yield() }
 		parent.sheetCoordinator?.finish(returning: "not an int")
 		let result = await pending
@@ -52,7 +52,7 @@ struct HarmonyPresentationResultTests {
 
 	@Test func swipeDismissalThroughBindingResumesWithNil() async {
 		let parent = HarmonyCoordinator(TestScreen.home)
-		async let pending: Int? = parent.present(.settings)
+		async let pending: Int? = parent.present(TestScreen.settings)
 		while parent.sheetCoordinator == nil { await Task.yield() }
 		parent.sheetCoordinator = nil
 		let result = await pending
@@ -63,10 +63,10 @@ struct HarmonyPresentationResultTests {
 		// dismissing an outer presentation must resolve a presentation nested inside
 		// it too, or the inner caller is suspended forever
 		let parent = HarmonyCoordinator(TestScreen.home)
-		async let outer: Int? = parent.present(.settings)
+		async let outer: Int? = parent.present(TestScreen.settings)
 		while parent.sheetCoordinator == nil { await Task.yield() }
 		let child = parent.sheetCoordinator!
-		async let inner: Int? = child.present(.detail)
+		async let inner: Int? = child.present(TestScreen.detail)
 		while child.sheetCoordinator == nil { await Task.yield() }
 
 		parent.sheetCoordinator = nil
@@ -82,7 +82,7 @@ struct HarmonyPresentationResultTests {
 		// presented, which lives on the tab coordinator rather than the stack's slot
 		let tabs = HarmonyTabCoordinator(selected: TestTab.home)
 		let stack = tabs.coordinator(for: .home)
-		async let pending: String? = stack.present(.detail, config: .init(action: .bottomSheet))
+		async let pending: String? = stack.present(TestScreen.detail, config: .init(action: .bottomSheet))
 		while tabs.bottomSheetCoordinator == nil { await Task.yield() }
 		stack.collapse()
 		let result = await pending
@@ -94,7 +94,7 @@ struct HarmonyPresentationResultTests {
 		// the result path works through the external host indirection too
 		let tabs = HarmonyTabCoordinator(selected: TestTab.home)
 		let stack = tabs.coordinator(for: .home)
-		async let pending: String? = stack.present(.detail, config: .init(action: .bottomSheet))
+		async let pending: String? = stack.present(TestScreen.detail, config: .init(action: .bottomSheet))
 		while tabs.bottomSheetCoordinator == nil { await Task.yield() }
 		tabs.bottomSheetCoordinator?.finish(returning: "picked")
 		let result = await pending

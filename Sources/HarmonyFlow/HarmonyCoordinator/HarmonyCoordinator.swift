@@ -1,5 +1,5 @@
 //
-//  HarmonyFlowCoordinator.swift
+//  HarmonyCoordinator.swift
 //  HarmonyFlow
 //
 //  Created by Ben Gottlieb on 6/9/26.
@@ -7,14 +7,14 @@
 
 import SwiftUI
 
-@MainActor @Observable public class HarmonyCoordinator<Screen: HarmonyScreen>: Identifiable, HarmonyBottomSheetHosting {
+@MainActor @Observable public class HarmonyCoordinator: Identifiable, HarmonyBottomSheetHosting {
 	var _screens: [ScreenAction] = []
 
-	var parentCoordinator: HarmonyCoordinator<Screen>?
-	var modalCoordinator: HarmonyCoordinator<Screen>? {
+	var parentCoordinator: HarmonyCoordinator?
+	var modalCoordinator: HarmonyCoordinator? {
 		didSet { if oldValue !== modalCoordinator { oldValue?.tearDownPresentation() } }
 	}
-	var bottomSheetCoordinator: HarmonyCoordinator<Screen>? {
+	var bottomSheetCoordinator: HarmonyCoordinator? {
 		didSet { if oldValue !== bottomSheetCoordinator { oldValue?.tearDownPresentation() } }
 	}
 
@@ -25,24 +25,32 @@ import SwiftUI
 
 	// when set (e.g. by a tab coordinator), bottom sheets presented here are hosted
 	// there instead, so they can render above container chrome like the tab bar
-	@ObservationIgnored weak var externalBottomSheetHost: (any HarmonyBottomSheetHosting<Screen>)?
-	var root: Screen
+	@ObservationIgnored weak var externalBottomSheetHost: (any HarmonyBottomSheetHosting)?
+	var root: HarmonyScreen
 	var configuration = HarmonyNavigationConfiguration(action: .push)
 
 	var action: HarmonyAction { configuration.action }
-	
+
 	nonisolated public var id: ObjectIdentifier { ObjectIdentifier(self) }
-	
-	public init(_ screen: Screen) {
+
+	public init(_ screen: HarmonyScreen) {
 		root = screen
 	}
-	
-	public init(_ path: [Screen]) {
+
+	public convenience init(_ destination: any HarmonyDestination) {
+		self.init(HarmonyScreen(destination))
+	}
+
+	public init(_ path: [HarmonyScreen]) {
 		precondition(!path.isEmpty, "HarmonyCoordinator requires at least one screen")
 		root = path[0]
 		_screens = path.dropFirst().map { ScreenAction(screen: $0, action: .push) }
 	}
-	
+
+	public convenience init(_ path: [any HarmonyDestination]) {
+		self.init(path.map { HarmonyScreen($0) })
+	}
+
 	func removeFromParentCoordinator() {
 		if let externalBottomSheetHost {
 			if externalBottomSheetHost.bottomSheetCoordinator === self { externalBottomSheetHost.bottomSheetCoordinator = nil }
@@ -57,11 +65,11 @@ import SwiftUI
 
 	// the nearest enclosing context that can host a bottom sheet: bottom sheets
 	// never stack on bottom sheets, so those defer to their parent
-	var bottomSheetHost: HarmonyCoordinator<Screen> {
+	var bottomSheetHost: HarmonyCoordinator {
 		action == .bottomSheet ? (parentCoordinator?.bottomSheetHost ?? self) : self
 	}
 
-	@discardableResult func addChild(_ screen: Screen, configuration: HarmonyNavigationConfiguration) -> HarmonyCoordinator<Screen> {
+	@discardableResult func addChild(_ screen: HarmonyScreen, configuration: HarmonyNavigationConfiguration) -> HarmonyCoordinator {
 		let new = HarmonyCoordinator([screen])
 		new.configuration = configuration
 
@@ -99,7 +107,7 @@ import SwiftUI
 		bottomSheetCoordinator = nil
 	}
 
-	var sheetCoordinator: HarmonyCoordinator<Screen>? {
+	var sheetCoordinator: HarmonyCoordinator? {
 		get {
 			guard let modalCoordinator, modalCoordinator.action.isSheet else { return nil }
 			return modalCoordinator
@@ -109,7 +117,7 @@ import SwiftUI
 		}
 	}
 
-	var fullScreenCoordinator: HarmonyCoordinator<Screen>? {
+	var fullScreenCoordinator: HarmonyCoordinator? {
 		get {
 			#if os(macOS)
 				return nil

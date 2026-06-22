@@ -1,5 +1,5 @@
 //
-//  HarmonyFlowCoordinator+Persistence.swift
+//  HarmonyCoordinator+Persistence.swift
 //  HarmonyFlow
 //
 //  Created by Ben Gottlieb on 6/12/26.
@@ -7,18 +7,19 @@
 
 import Foundation
 
-// optional capability: screen types that also conform to Codable get
-// whole-tree state persistence, with no requirements on those that don't
-struct HarmonySnapshot<Screen: HarmonyScreen & Codable>: Codable {
-	var root: Screen
-	var path: [Screen]
+// whole-tree state persistence. HarmonyScreen is always Codable (via the registry),
+// so this is unconditional now — but a screen whose destination type wasn't
+// registered will throw on encode/decode.
+struct HarmonySnapshot: Codable {
+	var root: HarmonyScreen
+	var path: [HarmonyScreen]
 	var configuration: HarmonyNavigationConfiguration
 	var modal: [HarmonySnapshot]		// 0 or 1 elements; an array only to break struct recursion
 	var bottomSheet: [HarmonySnapshot]
 }
 
-extension HarmonyCoordinator where Screen: Codable {
-	var snapshot: HarmonySnapshot<Screen> {
+extension HarmonyCoordinator {
+	var snapshot: HarmonySnapshot {
 		HarmonySnapshot(
 			root: root,
 			path: fullPath,
@@ -33,11 +34,11 @@ extension HarmonyCoordinator where Screen: Codable {
 	}
 
 	public convenience init(restoring data: Data) throws {
-		let snapshot = try JSONDecoder().decode(HarmonySnapshot<Screen>.self, from: data)
+		let snapshot = try JSONDecoder().decode(HarmonySnapshot.self, from: data)
 		self.init(snapshot: snapshot)
 	}
 
-	convenience init(snapshot: HarmonySnapshot<Screen>) {
+	convenience init(snapshot: HarmonySnapshot) {
 		self.init([snapshot.root] + snapshot.path)
 		configuration = snapshot.configuration
 

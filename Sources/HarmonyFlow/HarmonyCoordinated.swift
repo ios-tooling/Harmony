@@ -14,7 +14,7 @@ import SwiftUI
 ///
 /// ```swift
 /// struct BackButton: View {
-///     @HarmonyCoordinated<AppScreen> private var coordinator
+///     @HarmonyCoordinated private var coordinator
 ///     var body: some View { Button("Back") { coordinator.dismiss() } }
 /// }
 /// ```
@@ -23,17 +23,17 @@ import SwiftUI
 /// standalone `#Preview`), use the projected value for optional access:
 /// `$coordinator?.dismiss()`.
 @propertyWrapper
-public struct HarmonyCoordinated<Screen: HarmonyScreen>: DynamicProperty {
-	@Environment(HarmonyCoordinator<Screen>.self) private var coordinator: HarmonyCoordinator<Screen>?
+public struct HarmonyCoordinated: DynamicProperty {
+	@Environment(HarmonyCoordinator.self) private var coordinator: HarmonyCoordinator?
 
 	public init() { }
 
-	public var wrappedValue: HarmonyCoordinator<Screen> {
+	public var wrappedValue: HarmonyCoordinator {
 		guard let coordinator else {
-			fatalError("@HarmonyCoordinated requires a HarmonyCoordinator<\(Screen.self)> in the environment — present this view through a HarmonyStack, HarmonyTabs, or HarmonySplit. Use the projected value ($coordinator) for optional access.")
+			fatalError("@HarmonyCoordinated requires a HarmonyCoordinator in the environment — present this view through a HarmonyStack, HarmonyTabs, or HarmonySplit. Use the projected value ($coordinator) for optional access.")
 		}
 		return coordinator
 	}
 
-	public var projectedValue: HarmonyCoordinator<Screen>? { coordinator }
+	public var projectedValue: HarmonyCoordinator? { coordinator }
 }

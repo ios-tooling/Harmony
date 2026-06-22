@@ -1,5 +1,5 @@
 //
-//  HarmonyFlowPersistenceTests.swift
+//  HarmonyPersistenceTests.swift
 //  HarmonyFlow
 //
 //  Created by Ben Gottlieb on 6/12/26.
@@ -11,9 +11,14 @@ import Foundation
 
 @MainActor
 struct HarmonyPersistenceTests {
+	init() {
+		// the registry recovers erased destination types on decode
+		HarmonyScreenRegistry.register(TestScreen.self, forKey: "TestScreen")
+	}
+
 	@Test func stateRoundTripsThroughData() throws {
 		let original = HarmonyCoordinator([TestScreen.home, .detail, .settings])
-		let restored = try HarmonyCoordinator<TestScreen>(restoring: original.encodedState())
+		let restored = try HarmonyCoordinator(restoring: original.encodedState())
 		#expect(restored.root == .home)
 		#expect(restored.fullPath == [.detail, .settings])
 	}
@@ -21,10 +26,10 @@ struct HarmonyPersistenceTests {
 	@Test func presentedTreeSurvivesRoundTrip() throws {
 		// the whole presentation tree persists: children, their paths, and their configs
 		let original = HarmonyCoordinator(TestScreen.home)
-		original.show(.settings, config: .init(action: .partialModal, detents: [.fraction(0.75)], isInteractiveDismissDisabled: true))
-		original.sheetCoordinator?.push(.detail)
+		original.show(TestScreen.settings, config: .init(action: .partialModal, detents: [.fraction(0.75)], isInteractiveDismissDisabled: true))
+		original.sheetCoordinator?.push(TestScreen.detail)
 
-		let restored = try HarmonyCoordinator<TestScreen>(restoring: original.encodedState())
+		let restored = try HarmonyCoordinator(restoring: original.encodedState())
 		#expect(restored.sheetCoordinator?.root == .settings)
 		#expect(restored.sheetCoordinator?.fullPath == [.detail])
 		#expect(restored.sheetCoordinator?.configuration.detents == [.fraction(0.75)])
@@ -34,22 +39,22 @@ struct HarmonyPersistenceTests {
 	@Test func restoredChildrenCanDismiss() throws {
 		// parent links must be rebuilt, not just the tree shape
 		let original = HarmonyCoordinator(TestScreen.home)
-		original.bottomSheet(.detail)
-		let restored = try HarmonyCoordinator<TestScreen>(restoring: original.encodedState())
+		original.bottomSheet(TestScreen.detail)
+		let restored = try HarmonyCoordinator(restoring: original.encodedState())
 		restored.bottomSheetCoordinator?.dismissStack()
 		#expect(restored.bottomSheetCoordinator == nil)
 	}
 
 	@Test func replacePathSwapsWholePath() {
 		let coordinator = HarmonyCoordinator([TestScreen.home, .detail])
-		coordinator.replacePath([.settings, .detail, .settings])
+		coordinator.replacePath([TestScreen.settings, .detail, .settings])
 		#expect(coordinator.fullPath == [.settings, .detail, .settings])
 	}
 
 	@Test func tabStateRoundTrips() throws {
 		let tabs = HarmonyTabCoordinator(selected: TestTab.profile)
 		tabs.isTabBarHidden = true
-		tabs.coordinator(for: .home).push(.detail)
+		tabs.coordinator(for: .home).push(TestScreen.detail)
 
 		let restored = try HarmonyTabCoordinator<TestTab>(restoring: tabs.encodedState())
 		#expect(restored.selectedTab == .profile)
@@ -60,7 +65,7 @@ struct HarmonyPersistenceTests {
 
 	@Test func tabLevelBottomSheetRoundTripsWithWorkingHostLinks() throws {
 		let tabs = HarmonyTabCoordinator(selected: TestTab.home)
-		tabs.coordinator(for: .home).bottomSheet(.detail)
+		tabs.coordinator(for: .home).bottomSheet(TestScreen.detail)
 
 		let restored = try HarmonyTabCoordinator<TestTab>(restoring: tabs.encodedState())
 		#expect(restored.bottomSheetCoordinator?.root == .detail)
@@ -69,11 +74,11 @@ struct HarmonyPersistenceTests {
 	}
 
 	@Test func splitStateRoundTrips() throws {
-		let split = HarmonySplitCoordinator(sidebar: TestScreen.home, content: .detail, detail: .settings)
-		split.sidebarCoordinator.push(.settings)
-		split.detailCoordinator.push(.detail)
+		let split = HarmonySplitCoordinator(sidebar: TestScreen.home, content: TestScreen.detail, detail: TestScreen.settings)
+		split.sidebarCoordinator.push(TestScreen.settings)
+		split.detailCoordinator.push(TestScreen.detail)
 
-		let restored = try HarmonySplitCoordinator<TestScreen>(restoring: split.encodedState())
+		let restored = try HarmonySplitCoordinator(restoring: split.encodedState())
 		#expect(restored.sidebarCoordinator.fullPath == [.settings])
 		#expect(restored.contentCoordinator?.root == .detail)
 		#expect(restored.detailCoordinator.root == .settings)

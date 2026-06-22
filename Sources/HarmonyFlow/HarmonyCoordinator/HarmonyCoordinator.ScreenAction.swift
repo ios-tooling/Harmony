@@ -8,17 +8,8 @@
 import Foundation
 
 extension HarmonyCoordinator {
-	struct ScreenAction: Hashable, Equatable {
-        let screen: Screen
-        let action: HarmonyAction
-		
-		static func == (lhs: ScreenAction, rhs: ScreenAction) -> Bool {
-			lhs.screen == rhs.screen && lhs.action == rhs.action
-		}
-		
-		func hash(into hasher: inout Hasher) {
-			screen.hash(into: &hasher)
-			action.hash(into: &hasher)
-		}
-    }
+	struct ScreenAction: Hashable {
+		let screen: HarmonyScreen
+		let action: HarmonyAction
+	}
 }

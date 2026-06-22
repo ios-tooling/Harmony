@@ -7,8 +7,6 @@
 
 import Foundation
 
-extension HarmonyCoordinator {
-	public struct ScreenConfiguration {
-		public let coordinator: HarmonyCoordinator<Screen>
-	}
+public struct HarmonyScreenConfiguration {
+	public let coordinator: HarmonyCoordinator
 }

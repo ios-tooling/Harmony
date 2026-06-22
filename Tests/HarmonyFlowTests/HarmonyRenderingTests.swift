@@ -37,7 +37,7 @@ struct HarmonyRenderingTests {
 	}
 
 	@Test func splitTreeRendersWithoutTrapping() {
-		let split = HarmonySplitCoordinator(sidebar: TestScreen.home, content: .detail, detail: .settings)
+		let split = HarmonySplitCoordinator(sidebar: TestScreen.home, content: TestScreen.detail, detail: TestScreen.settings)
 		let window = render(HarmonySplit(split))
 		#expect(!(window.rootViewController?.view.subviews.isEmpty ?? true))
 	}
@@ -63,7 +63,7 @@ struct HarmonyRenderingTests {
 	}
 
 	@Test func splitTreeRendersWithoutTrapping() {
-		let split = HarmonySplitCoordinator(sidebar: TestScreen.home, content: .detail, detail: .settings)
+		let split = HarmonySplitCoordinator(sidebar: TestScreen.home, content: TestScreen.detail, detail: TestScreen.settings)
 		let host = NSHostingView(rootView: HarmonySplit(split))
 		host.setFrameSize(NSSize(width: 800, height: 600))
 		host.layoutSubtreeIfNeeded()
