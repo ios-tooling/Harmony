@@ -2,11 +2,13 @@
 
 Operational guide for coding agents working in this repository. Read this before changing navigation behavior; the architecture has a few load-bearing invariants that aren't obvious from any single file.
 
-The Swift module / library product / target are all named **`HarmonyFlow`** (`import HarmonyFlow`). The public type names are all `Harmony…` (`HarmonyCoordinator`, `HarmonyScreen`, `HarmonyStack`, …) — only the package/module was renamed, not the types.
+The Swift module / library product / target are all named **`HarmonyFlow`** (`import HarmonyFlow`). The public type names are all `Harmony…` (`HarmonyCoordinator`, `HarmonyScreen`, `HarmonyStack`, …).
 
 ## What this package is
 
-A SwiftUI navigation framework for iOS 18+ / macOS 15+. One `HarmonyScreen` enum per consuming app describes all destinations; `@Observable` coordinator classes hold navigation state; container views render it. See `README.md` for the consumer-facing API.
+A SwiftUI navigation framework for iOS 18+ / macOS 15+. Screens are **type-erased**: each feature conforms its own type to the `HarmonyDestination` protocol, and those get boxed into a single concrete `HarmonyScreen` struct that the whole coordinator tree is built on — so destinations from independent frameworks coexist in one stack, with no central enum. `@Observable` coordinator classes hold navigation state; container views render it. See `README.md` for the consumer-facing API.
+
+**The erasure is load-bearing.** `HarmonyScreen` wraps `any HarmonyDestination`; identity (`==`/`hash`/`id`) comes from `AnyHashable(destination)`, so two destinations of different types are never equal. `HarmonyCoordinator`, `HarmonyStack`, `HarmonySplit*`, and `@HarmonyCoordinated` are all **non-generic**; only `HarmonyTabCoordinator<Tab>` / `HarmonyTabs<Tab>` stay generic (over the tab enum). `HarmonyStack` registers one `navigationDestination(for: HarmonyScreen.self)`, and `HarmonyScreen.body` opens the existential to render the real view — the only `AnyView` is at each screen's root. Public navigation methods take `any HarmonyDestination` (so call sites qualify the case name, e.g. `push(Screen.detail)` — leading-dot can't infer the type).
 
 ## Build & test
 
@@ -30,7 +32,10 @@ The package depends on `ios-tooling/Suite` and `ios-tooling/chronicle` (resolved
 
 ```
 Sources/HarmonyFlow/
-  HarmonyScreen.swift                 protocol: one enum per app, draws itself
+  HarmonyDestination.swift            protocol each feature conforms its own screen type to
+  HarmonyScreen.swift                 the erased box (struct) wrapping any HarmonyDestination
+  HarmonyScreenConfiguration.swift    passed to every body(configuration:); holds .coordinator
+  HarmonyCoordinated.swift            @HarmonyCoordinated property wrapper (reads coordinator from environment)
   HarmonyAction.swift                 push / bottomSheet / partialModal / fullScreenModal (+ iOS detent defaults)
   HarmonyDetent.swift                 platform-neutral detent; maps to PresentationDetent (iOS) + height resolver (both)
   HarmonyNavigationConfiguration.swift per-presentation options (action, detents, interactive dismiss)
@@ -40,6 +45,7 @@ Sources/HarmonyFlow/
   HarmonyCoordinator/                 the stack coordinator, split across +Show / +Path / +Present / +Persistence
   HarmonyTabs/                        HarmonyTab, HarmonyTabCoordinator (+Persistence), HarmonyTabs view
   HarmonySplit/                       HarmonySplitCoordinator (+Persistence), HarmonySplit view
+  Persistence/                        HarmonyScreenRegistry + HarmonyScreen Codable (polymorphic encode/decode)
 Tests/HarmonyFlowTests/               Swift Testing suites (incl. rendering smoke tests)
 HarmonyTestHarness/                   example app (Xcode project, synchronized folder groups)
 ```
@@ -54,7 +60,7 @@ Conventions (from the owner's global `CLAUDE.md`, enforced here): files ≈100 l
 
 3. **Bottom sheets bubble to a host and never stack.** `bottomSheetHost` walks up: a bottom sheet presented from inside a bottom sheet replaces it. Under tabs, `externalBottomSheetHost` redirects a stack's bottom sheet to the `HarmonyTabCoordinator` so it renders above the tab bar. Routing lives in `HarmonyCoordinator.addChild`.
 
-4. **Present-for-result resolves in slot `didSet`.** `modalCoordinator` / `bottomSheetCoordinator` (and the tab coordinator's slot) call `resolvePendingPresentation()` on the *old* value when reassigned. This guarantees exactly-once resumption regardless of how the presentation ended. Don't move continuation resumption into individual dismiss methods — it'll double-resume (crash) or miss paths (leak).
+4. **Present-for-result resolves in slot `didSet`.** `modalCoordinator` / `bottomSheetCoordinator` (and the tab coordinator's slot) call `tearDownPresentation()` on the *old* value when reassigned. That **recursively** resolves the removed coordinator's continuation *and* its descendants' (by nil-ing its own slots, which re-enter the same path), so dismissing a parent flow never orphans a nested present-for-result. `resolvePendingPresentation()` is idempotent, so the cascade is crash-safe. Don't move continuation resumption into individual dismiss methods — it'll double-resume or miss paths.
 
 5. **`HarmonyStack` holds its coordinator as a `let`, not `@State`.** Container views (split columns, `showDetail`) swap coordinators out; `@State` would pin the first instance forever. The body uses `@Bindable var coordinator = coordinator` to get presentation bindings.
 
@@ -68,9 +74,12 @@ Conventions (from the owner's global `CLAUDE.md`, enforced here): files ≈100 l
 
 ## Persistence pattern
 
-Persistence is **opt-in via conditional conformance** — `extension HarmonyCoordinator where Screen: Codable`, never a protocol requirement. Each coordinator level has a sibling `+Persistence.swift` with a `Snapshot` struct. Recursion through the tree is broken with `[Snapshot]` (0-or-1 element) fields, since structs can't recurse directly. Restoration must **rebuild `parentCoordinator` / `externalBottomSheetHost` links**, not just the tree shape — otherwise restored children can't dismiss. Snapshot-missing tabs deliberately keep the fresh stacks the designated init created (forward-compat with added tab cases).
+`HarmonyScreen` is unconditionally `Codable` (it was, when generic, gated on `Screen: Codable`; erasure removed the conditional). Because the box holds `any HarmonyDestination`, decode can't recover the concrete type alone — so `HarmonyScreenRegistry` maps a stable string key ⇄ a Codable destination type. Consumers call `HarmonyScreenRegistry.register(_:forKey:)` once per type (each framework registers its own; the registry is a lock-guarded `nonisolated(unsafe)` store so it's reachable from `HarmonyScreen`'s nonisolated Codable methods). `HarmonyScreen` encodes as `{ type: key, value: payload }`; an **unregistered** type throws on encode/decode, which restore paths treat as "skip".
+
+Each coordinator level has a sibling `+Persistence.swift` with a `Snapshot` struct (now non-generic — `HarmonyTabSnapshot<Tab>` stays generic over the tab enum). Recursion through the tree is broken with `[Snapshot]` (0-or-1 element) fields, since structs can't recurse directly. Restoration must **rebuild `parentCoordinator` / `externalBottomSheetHost` links**, not just the tree shape — otherwise restored children can't dismiss. Snapshot-missing tabs deliberately keep the fresh stacks the designated init created (forward-compat with added tab cases).
 
 ## Gotchas
 
+- Navigation methods take `any HarmonyDestination`, so **leading-dot shorthand doesn't work** — qualify the case (`push(Screen.detail)`, not `push(.detail)`). In tests, free `==` overloads (`HarmonyScreen` vs the test enum) keep assertions like `root == .detail` reading naturally; arguments to methods still need qualifying.
 - Container coordinators should be fetched from the environment **optionally** in screens shared across container types (a split root has no tab coordinator, and vice-versa). The stack `HarmonyCoordinator` is always present.
 - `finish(returning:)` takes `(any Sendable)?` — that's the Swift 6 continuation-crossing requirement, not a design choice.
