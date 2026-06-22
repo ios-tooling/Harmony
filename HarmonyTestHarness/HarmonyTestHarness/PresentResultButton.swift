@@ -9,13 +9,13 @@ import SwiftUI
 import HarmonyFlow
 
 struct PresentResultButton: View {
-	@Environment(HarmonyCoordinator<Screen>.self) private var coordinator
+	@Environment(HarmonyCoordinator.self) private var coordinator
 	@State private var lastResult = "none yet"
 
 	var body: some View {
 		Button("Present for Result (got: \(lastResult))") {
 			Task {
-				let value: String? = await coordinator.present(.settings)
+				let value: String? = await coordinator.present(Screen.settings)
 				lastResult = value ?? "cancelled"
 			}
 		}

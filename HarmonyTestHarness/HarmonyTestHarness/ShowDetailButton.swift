@@ -9,14 +9,14 @@ import SwiftUI
 import HarmonyFlow
 
 struct ShowDetailButton: View {
-	@Environment(HarmonySplitCoordinator<Screen>.self) private var split: HarmonySplitCoordinator<Screen>?
+	@Environment(HarmonySplitCoordinator.self) private var split: HarmonySplitCoordinator?
 	@State private var count = 0
 
 	var body: some View {
 		if let split {
 			Button("Show Detail #\(count + 1)") {
 				count += 1
-				split.showDetail(.titled("Detail #\(count)"))
+				split.showDetail(Screen.titled("Detail #\(count)"))
 			}
 		}
 	}

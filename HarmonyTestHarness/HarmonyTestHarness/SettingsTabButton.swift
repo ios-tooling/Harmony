@@ -14,7 +14,7 @@ struct SettingsTabButton: View {
 	var body: some View {
 		if let tabs {
 			Button("Titled Tab → main") {
-				tabs.show(.titled("Subtitled"), in: .settings)
+				tabs.show(Screen.titled("Subtitled"), in: .settings)
 			}
 		}
 	}

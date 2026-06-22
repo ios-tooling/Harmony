@@ -8,9 +8,9 @@
 import SwiftUI
 import HarmonyFlow
 
-enum Screen: HarmonyScreen {
+enum Screen: HarmonyDestination {
 	case main, settings, titled(String)
-	
+
 	var id: String {
 		switch self {
 		case .main: "main"
@@ -21,35 +21,39 @@ enum Screen: HarmonyScreen {
 	func hash(into hasher: inout Hasher) {
 		hasher.combine(id)
 	}
-	
-	func body(configuration: HarmonyCoordinator<Self>.ScreenConfiguration) -> some View {
+
+	func body(configuration: HarmonyScreenConfiguration) -> some View {
 		switch self {
 		case .main:
 			VStack {
 				Text("main")
 
 				Button("Settings") {
-					configuration.coordinator.partialModal(.settings)
+					configuration.coordinator.partialModal(Screen.settings)
 				}
 
 				Button("Push Settings") {
-					configuration.coordinator.push(.settings)
+					configuration.coordinator.push(Screen.settings)
 				}
 
 				Button("Full Screen Settings") {
-					configuration.coordinator.fullScreenModal(.settings)
+					configuration.coordinator.fullScreenModal(Screen.settings)
 				}
 
 				Button("Bottom Sheet") {
-					configuration.coordinator.show(.settings, config: .init(action: .bottomSheet, detents: [.fraction(0.25), .medium, .fraction(0.85)]))
+					configuration.coordinator.show(Screen.settings, config: .init(action: .bottomSheet, detents: [.fraction(0.25), .medium, .fraction(0.85)]))
 				}
 
 				Button("Tall Sheet") {
-					configuration.coordinator.show(.settings, config: .init(action: .partialModal, detents: [.fraction(0.75), .large], isInteractiveDismissDisabled: true))
+					configuration.coordinator.show(Screen.settings, config: .init(action: .partialModal, detents: [.fraction(0.75), .large], isInteractiveDismissDisabled: true))
 				}
 
 				Button("Push Titled") {
-					configuration.coordinator.push(.titled("Titled"))
+					configuration.coordinator.push(Screen.titled("Titled"))
+				}
+
+				Button("Push Profile (other framework)") {
+					configuration.coordinator.push(ProfileScreen.profile)
 				}
 
 				CloseFlowButton()
@@ -75,12 +79,12 @@ enum Screen: HarmonyScreen {
 					configuration.coordinator.finish(returning: "🎁")
 				}
 				Button("main") {
-					configuration.coordinator.push(.main)
+					configuration.coordinator.push(Screen.main)
 				}
 
 			}
 			.navigationTitle("Settings")
-			
+
 		case .titled(let title):
 			VStack {
 				Text(title)
@@ -89,15 +93,15 @@ enum Screen: HarmonyScreen {
 					configuration.coordinator.dismiss()
 				}
 				Button("Push + 1") {
-					configuration.coordinator.push(.titled("\(title) + 1"))
+					configuration.coordinator.push(Screen.titled("\(title) + 1"))
 				}
 				Button("main") {
-					configuration.coordinator.pop(to: .main)
+					configuration.coordinator.pop(to: Screen.main)
 				}
 
 			}
 			.navigationTitle(title)
 		}
-		
+
 	}
 }

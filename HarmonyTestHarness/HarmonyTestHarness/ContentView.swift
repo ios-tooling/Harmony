@@ -11,7 +11,7 @@ import HarmonyFlow
 struct ContentView: View {
 	@AppStorage("useSplitRoot") private var useSplitRoot = false
 	@State private var tabs = HarmonyTabCoordinator(selected: AppTab.home)
-	@State private var split = HarmonySplitCoordinator(sidebar: Screen.main, detail: .settings)
+	@State private var split = HarmonySplitCoordinator(sidebar: Screen.main, detail: Screen.settings)
 
 	var body: some View {
 		Group {

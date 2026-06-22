@@ -11,10 +11,10 @@ import HarmonyFlow
 enum AppTab: String, HarmonyTab {
 	case home, settings
 
-	var rootScreen: Screen {
+	var rootScreen: any HarmonyDestination {
 		switch self {
-		case .home: .main
-		case .settings: .settings
+		case .home: Screen.main
+		case .settings: Screen.settings
 		}
 	}
 
