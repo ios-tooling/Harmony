@@ -59,6 +59,37 @@ struct HarmonyPresentationResultTests {
 		#expect(result == nil)
 	}
 
+	@Test func dismissingParentResolvesNestedPresentation() async {
+		// dismissing an outer presentation must resolve a presentation nested inside
+		// it too, or the inner caller is suspended forever
+		let parent = HarmonyCoordinator(TestScreen.home)
+		async let outer: Int? = parent.present(.settings)
+		while parent.sheetCoordinator == nil { await Task.yield() }
+		let child = parent.sheetCoordinator!
+		async let inner: Int? = child.present(.detail)
+		while child.sheetCoordinator == nil { await Task.yield() }
+
+		parent.sheetCoordinator = nil
+
+		let outerResult = await outer
+		let innerResult = await inner
+		#expect(outerResult == nil)
+		#expect(innerResult == nil)
+	}
+
+	@Test func collapseResolvesTabHostedBottomSheet() async {
+		// collapsing a tab's stack must also drop (and resolve) a bottom sheet it
+		// presented, which lives on the tab coordinator rather than the stack's slot
+		let tabs = HarmonyTabCoordinator(selected: TestTab.home)
+		let stack = tabs.coordinator(for: .home)
+		async let pending: String? = stack.present(.detail, config: .init(action: .bottomSheet))
+		while tabs.bottomSheetCoordinator == nil { await Task.yield() }
+		stack.collapse()
+		let result = await pending
+		#expect(result == nil)
+		#expect(tabs.bottomSheetCoordinator == nil)
+	}
+
 	@Test func tabHostedBottomSheetDeliversResult() async {
 		// the result path works through the external host indirection too
 		let tabs = HarmonyTabCoordinator(selected: TestTab.home)

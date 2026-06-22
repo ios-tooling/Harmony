@@ -24,8 +24,6 @@ xcodebuild -scheme HarmonyTestHarness -destination 'platform=iOS Simulator,name=
 
 **Always verify on both platforms** before declaring a navigation change done — behavior legitimately differs (see Platform differences). Run the harness build too when you touch view code; tests don't catch every SwiftUI misuse.
 
-> **Heads-up (rename in progress):** the harness Xcode project's local-package reference points at `../../HarmonyFlow`, but the repo directory is still `Harmony` — so the harness build currently fails to resolve the package. Either rename the repo directory to `HarmonyFlow` or repoint that reference to `../../Harmony`.
-
 The package depends on `ios-tooling/Suite` and `ios-tooling/chronicle` (resolved from GitHub). `Tab.allCases`, `@Observable`, and Swift Testing are used heavily.
 
 ## Repository layout

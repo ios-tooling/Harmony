@@ -54,18 +54,3 @@ public struct HarmonyStack<Screen: HarmonyScreen>: View {
 		#endif
 	}
 }
-
-//extension HarmonyStack where Root == EmptyView {
-//	public init(_ coordinator: HarmonyCoordinator<Screen>) {
-//		coordinator.suppliesRoot = true
-//		self.init(Screen.self, coordinator: coordinator, root: { EmptyView() })
-//	}
-//	
-//	public init(screen: Screen, coordinator: HarmonyCoordinator<Screen>? = nil) {
-//		let coordinator = coordinator ?? HarmonyCoordinator<Screen>()
-//		coordinator.suppliesRoot = true
-//		self.root = EmptyView()
-//		coordinator.show(screen, config: .init(action: .push))
-//		_coordinator = State(initialValue: coordinator)
-//	}
-//}

@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  HarmonyScreenConfiguration.swift
 //  HarmonyFlow
 //
 //  Created by Ben Gottlieb on 6/9/26.

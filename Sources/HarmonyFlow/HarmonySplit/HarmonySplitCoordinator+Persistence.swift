@@ -28,9 +28,10 @@ extension HarmonySplitCoordinator where Screen: Codable {
 
 	public convenience init(restoring data: Data) throws {
 		let snapshot = try JSONDecoder().decode(HarmonySplitSnapshot<Screen>.self, from: data)
-		self.init(sidebar: snapshot.sidebar.root, detail: snapshot.detail.root)
-		sidebarCoordinator = HarmonyCoordinator(snapshot: snapshot.sidebar)
-		contentCoordinator = snapshot.content.first.map { HarmonyCoordinator(snapshot: $0) }
-		detailCoordinator = HarmonyCoordinator(snapshot: snapshot.detail)
+		self.init(
+			sidebar: HarmonyCoordinator(snapshot: snapshot.sidebar),
+			content: snapshot.content.first.map { HarmonyCoordinator(snapshot: $0) },
+			detail: HarmonyCoordinator(snapshot: snapshot.detail)
+		)
 	}
 }

@@ -12,10 +12,10 @@ import SwiftUI
 
 	var parentCoordinator: HarmonyCoordinator<Screen>?
 	var modalCoordinator: HarmonyCoordinator<Screen>? {
-		didSet { if oldValue !== modalCoordinator { oldValue?.resolvePendingPresentation() } }
+		didSet { if oldValue !== modalCoordinator { oldValue?.tearDownPresentation() } }
 	}
 	var bottomSheetCoordinator: HarmonyCoordinator<Screen>? {
-		didSet { if oldValue !== bottomSheetCoordinator { oldValue?.resolvePendingPresentation() } }
+		didSet { if oldValue !== bottomSheetCoordinator { oldValue?.tearDownPresentation() } }
 	}
 
 	// presentation-result plumbing: the slot didSets above guarantee exactly-once
@@ -86,6 +86,17 @@ import SwiftUI
 		pendingPresentationContinuation?.resume(returning: pendingPresentationResult)
 		pendingPresentationContinuation = nil
 		pendingPresentationResult = nil
+	}
+
+	// recursively resolves this coordinator's pending continuation and tears down
+	// anything it presented, so dismissing a presentation never orphans a nested
+	// present-for-result continuation deeper in the subtree (the nil assignments
+	// re-enter this method through the slot didSets; identity-guarded, so a nil
+	// slot is a no-op and recursion terminates at the leaves)
+	func tearDownPresentation() {
+		resolvePendingPresentation()
+		modalCoordinator = nil
+		bottomSheetCoordinator = nil
 	}
 
 	var sheetCoordinator: HarmonyCoordinator<Screen>? {

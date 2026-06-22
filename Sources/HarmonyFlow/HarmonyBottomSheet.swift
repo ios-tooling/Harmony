@@ -38,14 +38,20 @@ struct HarmonyBottomSheet<Screen: HarmonyScreen>: View {
 			ZStack(alignment: .bottom) {
 				Color.black
 					.opacity(dimOpacity(displayed: displayed, smallest: heights[0], container: containerHeight))
-					.allowsHitTesting(false)
+					.contentShape(.rect)		// stays tappable even when the dim is fully transparent at the smallest detent
 					.transition(.opacity)
+					.onTapGesture { dismissOnScrimTap() }
 
 				card(displayed: displayed, containerHeight: containerHeight, heights: heights, resting: resting)
 					.transition(.move(edge: .bottom))
 			}
 		}
 		.ignoresSafeArea()
+	}
+
+	private func dismissOnScrimTap() {
+		guard !coordinator.configuration.isInteractiveDismissDisabled else { return }
+		withAnimation(.spring) { coordinator.dismissStack() }
 	}
 
 	private func dimOpacity(displayed: CGFloat, smallest: CGFloat, container: CGFloat) -> Double {

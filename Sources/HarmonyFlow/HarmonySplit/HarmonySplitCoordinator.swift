@@ -19,6 +19,12 @@ import SwiftUI
 		detailCoordinator = HarmonyCoordinator(detail)
 	}
 
+	init(sidebar: HarmonyCoordinator<Screen>, content: HarmonyCoordinator<Screen>?, detail: HarmonyCoordinator<Screen>) {
+		sidebarCoordinator = sidebar
+		contentCoordinator = content
+		detailCoordinator = detail
+	}
+
 	// selection-style navigation: replaces the column's stack entirely
 	public func showDetail(_ screen: Screen) {
 		detailCoordinator = HarmonyCoordinator(screen)

@@ -61,5 +61,10 @@ extension HarmonyCoordinator {
 		_screens.removeAll()
 		modalCoordinator = nil
 		bottomSheetCoordinator = nil
+		// a bottom sheet presented from this stack under tabs lives on the external
+		// host, not in our own slot, so clear it there if it belongs to us
+		if let externalBottomSheetHost, externalBottomSheetHost.bottomSheetCoordinator?.parentCoordinator === self {
+			externalBottomSheetHost.bottomSheetCoordinator = nil
+		}
 	}
 }

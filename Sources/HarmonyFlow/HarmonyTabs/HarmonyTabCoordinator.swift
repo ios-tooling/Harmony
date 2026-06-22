@@ -11,7 +11,7 @@ import SwiftUI
 	public var selectedTab: Tab
 	public var isTabBarHidden = false
 	var bottomSheetCoordinator: HarmonyCoordinator<Tab.Screen>? {
-		didSet { if oldValue !== bottomSheetCoordinator { oldValue?.resolvePendingPresentation() } }
+		didSet { if oldValue !== bottomSheetCoordinator { oldValue?.tearDownPresentation() } }
 	}
 	var stacks: [Tab: HarmonyCoordinator<Tab.Screen>] = [:]
 
